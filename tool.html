@@ -1,0 +1,746 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Veltora — Acesso ao Painel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ── ACCESS GATE ─────────────────────────── */
+.gate{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px}
+.gate-card{background:var(--card);border:1px solid var(--border);border-radius:22px;padding:40px 36px;width:100%;max-width:420px;text-align:center;box-shadow:0 40px 80px rgba(0,0,0,.6)}
+.gate-logo{width:60px;height:60px;border-radius:16px;background:linear-gradient(135deg,#7c3aed,#2563eb);display:grid;place-items:center;font-size:28px;font-weight:900;margin:0 auto 20px}
+.gate-title{font-size:22px;font-weight:800;margin-bottom:6px}
+.gate-sub{font-size:14px;color:#94a3b8;margin-bottom:28px;line-height:1.5}
+.gate-input{width:100%;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.12);border-radius:12px;padding:14px 16px;font-size:17px;font-family:'Inter',monospace;color:#f1f5f9;text-align:center;letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px;transition:.2s}
+.gate-input:focus{outline:none;border-color:rgba(124,58,237,.6);background:rgba(124,58,237,.07)}
+.gate-input.err{border-color:rgba(239,68,68,.6);animation:shake .35s}
+.gate-input.ok{border-color:rgba(16,185,129,.6)}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.gate-btn{width:100%;padding:15px;border-radius:12px;background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;font-size:16px;font-weight:700;border:none;cursor:pointer;transition:.2s;box-shadow:0 10px 26px -10px rgba(124,58,237,.7);font-family:'Inter',sans-serif;margin-bottom:20px}
+.gate-btn:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.gate-btn:disabled{opacity:.5;pointer-events:none}
+.gate-divider{display:flex;align-items:center;gap:12px;margin-bottom:16px;color:#4b5563;font-size:12.5px}
+.gate-divider::before,.gate-divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.07)}
+.gate-wa{width:100%;padding:13px;border-radius:12px;background:rgba(37,211,102,.12);color:#25d366;font-size:14px;font-weight:700;border:1px solid rgba(37,211,102,.25);cursor:pointer;transition:.2s;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px}
+.gate-wa:hover{background:rgba(37,211,102,.2)}
+.gate-err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);border-radius:10px;padding:10px 14px;font-size:13px;color:#ef4444;margin-bottom:14px;display:none}
+.gate-err.on{display:block}
+.gate-note{font-size:11.5px;color:#4b5563;margin-top:18px;line-height:1.6}
+</style>
+<style>
+:root{
+  --bg:#07071a;--card:#0e0f1e;--card2:#131428;--border:rgba(255,255,255,.08);
+  --p1:#7c3aed;--p2:#5b21b6;--g1:#7c3aed;--g2:#2563eb;
+  --ok:#10b981;--warn:#f59e0b;--err:#ef4444;--info:#06b6d4;
+  --text:#f1f5f9;--muted:#94a3b8;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+
+/* ── LAYOUT ─────────────────────────────── */
+.app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:230px;min-width:230px;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.header{height:56px;min-height:56px;background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px}
+
+/* ── SIDEBAR ─────────────────────────────── */
+.sb-logo{display:flex;align-items:center;gap:10px;padding:18px 16px;border-bottom:1px solid var(--border)}
+.sb-mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--g1),var(--g2));display:grid;place-items:center;font-weight:900;font-size:17px}
+.sb-logo span{font-weight:800;font-size:16px}
+.sb-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:16px 16px 8px}
+.sb-nav{display:flex;flex-direction:column;gap:2px;padding:0 8px}
+.sb-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;font-size:14px;font-weight:500;color:var(--muted);cursor:pointer;transition:.2s}
+.sb-item:hover,.sb-item.on{background:rgba(124,58,237,.15);color:#a78bfa}
+.sb-item.on{background:rgba(124,58,237,.18)}
+.sb-ico{width:20px;text-align:center;font-size:16px}
+.sb-badge{margin-left:auto;background:rgba(124,58,237,.25);color:#a78bfa;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;min-width:20px;text-align:center}
+.sb-bottom{margin-top:auto;padding:12px 8px;border-top:1px solid var(--border)}
+.sb-version{padding:8px 12px;font-size:11.5px;color:var(--muted)}
+
+/* ── HEADER ─────────────────────────────── */
+.h-title{font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
+.h-right{display:flex;align-items:center;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:.2s;font-family:inherit}
+.btn-primary{background:linear-gradient(135deg,var(--g1),var(--g2));color:#fff}
+.btn-primary:hover{filter:brightness(1.1)}
+.btn-ghost{background:rgba(255,255,255,.06);color:var(--text);border:1px solid var(--border)}
+.btn-ghost:hover{background:rgba(255,255,255,.1)}
+.btn-ok{background:rgba(16,185,129,.12);color:var(--ok);border:1px solid rgba(16,185,129,.25)}
+.btn-ok:hover{background:rgba(16,185,129,.22)}
+.btn-warn{background:rgba(245,158,11,.12);color:var(--warn);border:1px solid rgba(245,158,11,.25)}
+.btn-err{background:rgba(239,68,68,.12);color:var(--err);border:1px solid rgba(239,68,68,.25)}
+.btn-info{background:rgba(6,182,212,.12);color:var(--info);border:1px solid rgba(6,182,212,.25)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-lg{padding:13px 24px;font-size:15px;border-radius:10px;font-weight:700}
+
+/* ── VIEWS ───────────────────────────────── */
+.view{display:none;flex:1;flex-direction:column;overflow:hidden}
+.view.on{display:flex}
+
+/* ── GENERATOR VIEW ─────────────────────── */
+.content{display:flex;flex:1;overflow:hidden}
+.panel-form{width:340px;min-width:340px;background:var(--card);border-right:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column}
+.panel-preview{flex:1;display:flex;flex-direction:column;background:#0a0a1a;overflow:hidden}
+.preview-bar{height:48px;min-height:48px;background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;padding:0 16px}
+.preview-url{flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:7px;padding:5px 12px;font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.preview-frame{flex:1;width:100%;border:none;background:#fff}
+
+.form-section{padding:20px}
+.form-section+.form-section{border-top:1px solid var(--border);padding-top:20px}
+.form-title{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:6px}
+.field input,.field select,.field textarea{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;color:var(--text);font-family:inherit;transition:.2s}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:rgba(124,58,237,.5);background:rgba(124,58,237,.06)}
+.field select option{background:#0e0f1e;color:var(--text)}
+.field textarea{resize:vertical;min-height:64px}
+.field .hint{font-size:11px;color:var(--muted);margin-top:5px}
+.generate-btn{margin:16px 20px 8px;padding:13px;border-radius:10px;background:linear-gradient(135deg,var(--g1),var(--g2));color:#fff;font-size:15px;font-weight:700;border:none;cursor:pointer;width:calc(100% - 40px);transition:.2s;box-shadow:0 8px 20px -8px rgba(124,58,237,.7);display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit}
+.generate-btn:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.actions-bar{display:flex;gap:8px;padding:12px 20px;border-top:1px solid var(--border);flex-wrap:wrap}
+.msg-panel{padding:16px 20px;border-top:1px solid var(--border)}
+.msg-title{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.msg-box{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:13.5px;line-height:1.65;color:var(--text);white-space:pre-wrap}
+.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:var(--muted);text-align:center;padding:32px}
+.empty-ico{font-size:52px;opacity:.4}
+.empty-state h3{font-size:18px;font-weight:700;color:var(--text)}
+.empty-state p{font-size:14px;max-width:320px;line-height:1.6}
+
+/* ── LEADS VIEW ─────────────────────────── */
+.leads-wrap{flex:1;overflow:auto;padding:24px}
+
+/* Stats bar */
+.stats-row{display:flex;gap:14px;margin-bottom:24px;flex-wrap:wrap}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px;flex:1;min-width:120px}
+.stat-card .sc-label{font-size:11.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.stat-card .sc-val{font-size:28px;font-weight:800;line-height:1}
+.stat-card .sc-sub{font-size:11px;color:var(--muted);margin-top:3px}
+
+/* Toolbar */
+.leads-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.leads-toolbar .search-input{flex:1;min-width:200px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:9px 14px;font-size:14px;color:var(--text);font-family:inherit}
+.leads-toolbar .search-input:focus{outline:none;border-color:rgba(124,58,237,.4)}
+.status-filter{display:flex;gap:6px;flex-wrap:wrap}
+.sf-btn{padding:6px 14px;border-radius:999px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);transition:.2s;white-space:nowrap}
+.sf-btn:hover,.sf-btn.on{background:rgba(124,58,237,.15);border-color:rgba(124,58,237,.4);color:#a78bfa}
+
+/* Table */
+.leads-table-wrap{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.leads-table{width:100%;border-collapse:collapse}
+.leads-table th{padding:12px 16px;text-align:left;font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--card2);border-bottom:1px solid var(--border)}
+.leads-table td{padding:13px 16px;border-bottom:1px solid var(--border);font-size:13.5px;vertical-align:middle}
+.leads-table tr:last-child td{border-bottom:none}
+.leads-table tr:hover td{background:rgba(255,255,255,.02)}
+.lead-name{font-weight:700;font-size:14px;margin-bottom:2px}
+.lead-cat{font-size:12px;color:var(--muted)}
+.lead-city{font-size:12.5px;color:var(--muted)}
+.lead-phone{font-size:13px;font-family:monospace;color:#a78bfa}
+
+/* Status badge */
+.status-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;font-size:11.5px;font-weight:700;white-space:nowrap;cursor:pointer;border:none;font-family:inherit}
+.s-novo{background:rgba(148,163,184,.1);color:#94a3b8;border:1px solid rgba(148,163,184,.2)}
+.s-abordado{background:rgba(245,158,11,.1);color:var(--warn);border:1px solid rgba(245,158,11,.25)}
+.s-viu{background:rgba(6,182,212,.1);color:var(--info);border:1px solid rgba(6,182,212,.25)}
+.s-interesse{background:rgba(124,58,237,.15);color:#a78bfa;border:1px solid rgba(124,58,237,.3)}
+.s-vendido{background:rgba(16,185,129,.12);color:var(--ok);border:1px solid rgba(16,185,129,.3)}
+.s-perdido{background:rgba(239,68,68,.1);color:var(--err);border:1px solid rgba(239,68,68,.2)}
+
+/* Lead row actions */
+.row-actions{display:flex;gap:6px;flex-wrap:wrap}
+
+/* Empty leads */
+.leads-empty{padding:64px 32px;text-align:center;color:var(--muted)}
+.leads-empty .big-ico{font-size:48px;opacity:.3;margin-bottom:14px}
+.leads-empty h3{font-size:17px;font-weight:700;color:var(--text);margin-bottom:8px}
+.leads-empty p{font-size:13.5px;line-height:1.6;max-width:360px;margin:0 auto 20px}
+
+/* ── MODAL ───────────────────────────────── */
+.modal-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.on{display:flex}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:28px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 40px 80px rgba(0,0,0,.6)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.modal-title{font-size:18px;font-weight:800}
+.modal-close{width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.07);border:none;color:var(--text);cursor:pointer;font-size:18px;display:grid;place-items:center}
+.modal-close:hover{background:rgba(255,255,255,.12)}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:20px;border-top:1px solid var(--border)}
+
+/* ── STATUS DROPDOWN ─────────────────────── */
+.status-menu{position:fixed;z-index:300;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:6px;box-shadow:0 20px 40px rgba(0,0,0,.5);min-width:180px;display:none}
+.status-menu.on{display:block}
+.sm-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;font-size:13.5px;font-weight:600;transition:.15s}
+.sm-item:hover{background:rgba(255,255,255,.06)}
+
+/* ── TOAST ───────────────────────────────── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(60px);background:#1a1a30;border:1px solid rgba(16,185,129,.4);color:var(--ok);font-size:13.5px;font-weight:600;padding:12px 24px;border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.5);z-index:1000;transition:.35s cubic-bezier(.3,.8,.3,1);opacity:0}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+.toast.err{border-color:rgba(239,68,68,.4);color:var(--err)}
+</style>
+</head>
+<body>
+
+<!-- ── ACCESS GATE ── -->
+<div class="gate" id="gate">
+  <div class="gate-card">
+    <div class="gate-logo">V</div>
+    <h1 class="gate-title">Painel Veltora</h1>
+    <p class="gate-sub">Digite seu código de acesso para entrar.<br>Você recebeu o código após o pagamento.</p>
+    <div class="gate-err" id="gateErr">❌ Código inválido. Verifique e tente novamente.</div>
+    <input class="gate-input" id="gateInput" type="text" placeholder="VLTX-XXXXXX-XXXX" maxlength="18" autocomplete="off" spellcheck="false">
+    <button class="gate-btn" id="gateBtn" onclick="validateCode()">🔓 Acessar Painel</button>
+    <div class="gate-divider">ainda não comprou?</div>
+    <button class="gate-wa" onclick="window.open('https://wa.me/5544998458841?text=Ol%C3%A1!%20Quero%20adquirir%20o%20acesso%20vitalício%20ao%20Veltora%20por%20R%2425','_blank')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.945C.16 5.335 5.495 0 12.05 0a11.82 11.82 0 018.413 3.488 11.82 11.82 0 013.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 01-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 001.51 5.26l-.999 3.648 3.978-1.615zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.074-.149-.669-1.611-.916-2.206-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+      Comprar acesso — R$25 vitalício
+    </button>
+    <p class="gate-note">Problemas com seu código? Fale no WhatsApp acima.<br>Acesso liberado permanentemente no seu dispositivo.</p>
+  </div>
+</div>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sb-logo">
+      <div class="sb-mark">V</div>
+      <span>Veltora</span>
+    </div>
+    <div class="sb-label">Ferramentas</div>
+    <nav class="sb-nav">
+      <div class="sb-item on" data-view="gen" onclick="switchView('gen',this)">
+        <span class="sb-ico">⚡</span>Gerar Site
+      </div>
+      <div class="sb-item" data-view="leads" onclick="switchView('leads',this)">
+        <span class="sb-ico">👥</span>Leads
+        <span class="sb-badge" id="leadCountBadge">0</span>
+      </div>
+      <div class="sb-item" onclick="alert('Em breve: histórico completo!')">
+        <span class="sb-ico">🕐</span>Histórico
+      </div>
+    </nav>
+    <div class="sb-label">Conta</div>
+    <nav class="sb-nav">
+      <div class="sb-item" onclick="window.open('https://wa.me/5544998458841','_blank')">
+        <span class="sb-ico">💬</span>Suporte
+      </div>
+      <div class="sb-item" onclick="window.location.href='index.html'">
+        <span class="sb-ico">🏠</span>Veltora.com.br
+      </div>
+    </nav>
+    <div class="sb-bottom">
+      <div class="sb-version">Veltora v2.0 · Vitalício</div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <!-- Header changes per view -->
+    <header class="header" id="header-gen">
+      <span class="h-title">⚡ Gerador de Sites</span>
+      <div class="h-right">
+        <button class="btn btn-ghost" onclick="resetForm()">🔄 Limpar</button>
+        <button class="btn btn-primary" onclick="generateSite()">Gerar Site →</button>
+      </div>
+    </header>
+    <header class="header" id="header-leads" style="display:none">
+      <span class="h-title">👥 Leads <span id="leadsCount" style="font-size:13px;color:var(--muted);font-weight:500"></span></span>
+      <div class="h-right">
+        <button class="btn btn-ghost btn-sm" onclick="importCSV()">⬆️ Importar</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportLeads()">⬇️ Exportar</button>
+        <button class="btn btn-primary" onclick="openAddLead()">+ Novo Lead</button>
+      </div>
+    </header>
+
+    <!-- ── GENERATOR VIEW ── -->
+    <div class="view on" id="view-gen">
+      <div class="content">
+        <div class="panel-form" id="formPanel">
+          <form onsubmit="return false">
+            <div class="form-section">
+              <div class="form-title">Dados do Negócio</div>
+              <div class="field">
+                <label>Nome do Negócio *</label>
+                <input type="text" id="nome" placeholder="Ex: Barbearia do João">
+              </div>
+              <div class="field">
+                <label>Categoria / Ramo</label>
+                <select id="categoria">
+                  <option value="">— Selecionar —</option>
+                  <optgroup label="Beleza & Saúde">
+                    <option value="barbearia">✂️ Barbearia</option>
+                    <option value="cabeleireiro">💇 Cabeleireiro / Salão</option>
+                    <option value="estetica">✨ Clínica Estética</option>
+                    <option value="beleza">💅 Beleza / Manicure</option>
+                    <option value="clinica medica">🩺 Clínica Médica</option>
+                    <option value="odontologia">🦷 Odontologia</option>
+                    <option value="farmacia">💊 Farmácia</option>
+                  </optgroup>
+                  <optgroup label="Alimentação">
+                    <option value="restaurante">🍽️ Restaurante</option>
+                    <option value="pizzaria">🍕 Pizzaria</option>
+                    <option value="lanchonete">🍔 Lanchonete</option>
+                    <option value="padaria">🥖 Padaria</option>
+                  </optgroup>
+                  <optgroup label="Fitness">
+                    <option value="academia">🏋️ Academia / Gym</option>
+                  </optgroup>
+                  <optgroup label="Serviços">
+                    <option value="imobiliaria">🏠 Imobiliária</option>
+                    <option value="pet shop">🐶 Pet Shop</option>
+                    <option value="oficina mecanica">🔧 Oficina Mecânica</option>
+                    <option value="advocacia">⚖️ Advocacia</option>
+                    <option value="mercado">🛒 Mercado</option>
+                    <option value="hotel">🛏️ Hotel / Pousada</option>
+                  </optgroup>
+                  <option value="outro">🏢 Outro / Genérico</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Cidade</label>
+                <input type="text" id="cidade" placeholder="Ex: Curitiba">
+              </div>
+            </div>
+            <div class="form-section">
+              <div class="form-title">Contato</div>
+              <div class="field">
+                <label>WhatsApp / Telefone</label>
+                <input type="text" id="telefone" placeholder="Ex: 41999999999">
+                <div class="hint">Com DDD, sem espaços</div>
+              </div>
+              <div class="field">
+                <label>Endereço</label>
+                <input type="text" id="endereco" placeholder="Ex: Rua das Flores, 123">
+              </div>
+            </div>
+            <div class="form-section">
+              <div class="form-title">Personalização (opcional)</div>
+              <div class="field">
+                <label>Descrição</label>
+                <textarea id="descricao" placeholder="Breve descrição sobre o negócio..."></textarea>
+              </div>
+              <div class="field">
+                <label>Nome do Responsável</label>
+                <input type="text" id="responsavel" placeholder="Ex: João Silva">
+              </div>
+            </div>
+          </form>
+          <button class="generate-btn" id="genBtn" onclick="generateSite()">
+            <span id="genBtnIco">⚡</span>
+            <span id="genBtnTxt">Gerar Site Agora</span>
+          </button>
+          <div class="msg-panel" id="msgPanel" style="display:none">
+            <div class="msg-title">💬 Mensagem WhatsApp</div>
+            <div class="msg-box" id="msgBox"></div>
+            <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+              <button class="btn btn-ok btn-sm" onclick="copyMsg()">📋 Copiar</button>
+              <button class="btn btn-ghost btn-sm" id="btnWA">📱 Abrir WhatsApp</button>
+              <button class="btn btn-info btn-sm" onclick="saveLeadFromGen()">💾 Salvar no CRM</button>
+            </div>
+          </div>
+          <div class="actions-bar" id="actionsBar" style="display:none">
+            <button class="btn btn-ok btn-sm" onclick="downloadSite()">⬇️ Download HTML</button>
+            <button class="btn btn-ghost btn-sm" onclick="copyHtml()">📋 Copiar HTML</button>
+            <button class="btn btn-ghost btn-sm" onclick="openFullPreview()">🔗 Tela cheia</button>
+          </div>
+        </div>
+        <div class="panel-preview">
+          <div class="preview-bar">
+            <div style="display:flex;gap:5px">
+              <span style="width:11px;height:11px;border-radius:50%;background:#ff5f57;display:block"></span>
+              <span style="width:11px;height:11px;border-radius:50%;background:#febc2e;display:block"></span>
+              <span style="width:11px;height:11px;border-radius:50%;background:#28c840;display:block"></span>
+            </div>
+            <div class="preview-url" id="previewUrl">Preencha os dados e clique em Gerar Site</div>
+            <button class="btn btn-ghost btn-sm" onclick="toggleMobile()" id="mobileBtn">📱 Mobile</button>
+            <button class="btn btn-ghost btn-sm" onclick="refreshPreview()">🔄</button>
+          </div>
+          <div id="previewWrap" style="flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;position:relative">
+            <div class="empty-state" id="emptyState">
+              <div class="empty-ico">🌐</div>
+              <h3>Prévia do site aqui</h3>
+              <p>Preencha os dados do negócio e clique em <strong style="color:#a78bfa">Gerar Site</strong></p>
+            </div>
+            <iframe class="preview-frame" id="previewFrame" style="display:none"></iframe>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── LEADS VIEW ── -->
+    <div class="view" id="view-leads">
+      <div class="leads-wrap">
+        <!-- Stats -->
+        <div class="stats-row" id="statsRow">
+          <div class="stat-card"><div class="sc-label">Total</div><div class="sc-val" id="st-total">0</div><div class="sc-sub">leads cadastrados</div></div>
+          <div class="stat-card"><div class="sc-label">Abordados</div><div class="sc-val" id="st-abord" style="color:var(--warn)">0</div><div class="sc-sub">aguardando resposta</div></div>
+          <div class="stat-card"><div class="sc-label">Interessados</div><div class="sc-val" id="st-int" style="color:#a78bfa">0</div><div class="sc-sub">em negociação</div></div>
+          <div class="stat-card"><div class="sc-label">Vendidos</div><div class="sc-val" id="st-vend" style="color:var(--ok)">0</div><div class="sc-sub">conversões</div></div>
+        </div>
+        <!-- Toolbar -->
+        <div class="leads-toolbar">
+          <input type="text" class="search-input" id="searchInput" placeholder="🔍  Buscar por nome, categoria ou cidade..." oninput="renderLeads()">
+          <div class="status-filter">
+            <button class="sf-btn on" data-filter="all" onclick="setFilter('all',this)">Todos</button>
+            <button class="sf-btn" data-filter="novo" onclick="setFilter('novo',this)">🆕 Novos</button>
+            <button class="sf-btn" data-filter="abordado" onclick="setFilter('abordado',this)">📤 Abordados</button>
+            <button class="sf-btn" data-filter="interesse" onclick="setFilter('interesse',this)">💬 Interessados</button>
+            <button class="sf-btn" data-filter="vendido" onclick="setFilter('vendido',this)">✅ Vendidos</button>
+            <button class="sf-btn" data-filter="perdido" onclick="setFilter('perdido',this)">❌ Perdidos</button>
+          </div>
+        </div>
+        <!-- Table -->
+        <div class="leads-table-wrap">
+          <table class="leads-table">
+            <thead>
+              <tr>
+                <th>Negócio</th>
+                <th>Cidade</th>
+                <th>WhatsApp</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="leadsBody"></tbody>
+          </table>
+          <div class="leads-empty" id="leadsEmpty" style="display:none">
+            <div class="big-ico">👥</div>
+            <h3>Nenhum lead ainda</h3>
+            <p>Adicione negócios locais que você quer prospectar. Cada lead é uma oportunidade de venda!</p>
+            <button class="btn btn-primary" onclick="openAddLead()">+ Adicionar primeiro lead</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ADD / EDIT LEAD MODAL ── -->
+<div class="modal-overlay" id="modalLead">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modalTitle">Novo Lead</span>
+      <button class="modal-close" onclick="closeModal('modalLead')">✕</button>
+    </div>
+    <div class="field"><label>Nome do Negócio *</label><input type="text" id="m-nome" placeholder="Ex: Barbearia Pro"></div>
+    <div class="field"><label>Categoria</label>
+      <select id="m-cat">
+        <option value="">— Selecionar —</option>
+        <option value="barbearia">✂️ Barbearia</option>
+        <option value="cabeleireiro">💇 Cabeleireiro</option>
+        <option value="estetica">✨ Estética</option>
+        <option value="clinica medica">🩺 Clínica Médica</option>
+        <option value="odontologia">🦷 Odontologia</option>
+        <option value="restaurante">🍽️ Restaurante</option>
+        <option value="pizzaria">🍕 Pizzaria</option>
+        <option value="lanchonete">🍔 Lanchonete</option>
+        <option value="padaria">🥖 Padaria</option>
+        <option value="academia">🏋️ Academia</option>
+        <option value="imobiliaria">🏠 Imobiliária</option>
+        <option value="pet shop">🐶 Pet Shop</option>
+        <option value="farmacia">💊 Farmácia</option>
+        <option value="oficina mecanica">🔧 Oficina</option>
+        <option value="advocacia">⚖️ Advocacia</option>
+        <option value="mercado">🛒 Mercado</option>
+        <option value="hotel">🛏️ Hotel</option>
+        <option value="outro">🏢 Outro</option>
+      </select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="field"><label>Cidade</label><input type="text" id="m-cidade" placeholder="Ex: Curitiba"></div>
+      <div class="field"><label>UF</label><input type="text" id="m-uf" placeholder="Ex: PR" maxlength="2"></div>
+    </div>
+    <div class="field"><label>WhatsApp / Telefone</label><input type="text" id="m-tel" placeholder="Ex: 41999999999"></div>
+    <div class="field"><label>Endereço</label><input type="text" id="m-end" placeholder="Ex: Rua das Flores, 123"></div>
+    <div class="field"><label>Responsável</label><input type="text" id="m-resp" placeholder="Nome do dono / contato"></div>
+    <div class="field"><label>CNPJ (opcional)</label><input type="text" id="m-cnpj" placeholder="Ex: 12.345.678/0001-90"></div>
+    <div class="field"><label>Observações</label><textarea id="m-obs" placeholder="Notas sobre este lead..."></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalLead')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveLead()">💾 Salvar Lead</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── STATUS DROPDOWN ── -->
+<div class="status-menu" id="statusMenu">
+  <div class="sm-item" onclick="setLeadStatus(null,'novo')"><span class="status-badge s-novo">🆕 Novo</span></div>
+  <div class="sm-item" onclick="setLeadStatus(null,'abordado')"><span class="status-badge s-abordado">📤 Abordado</span></div>
+  <div class="sm-item" onclick="setLeadStatus(null,'viu')"><span class="status-badge s-viu">👀 Viu o site</span></div>
+  <div class="sm-item" onclick="setLeadStatus(null,'interesse')"><span class="status-badge s-interesse">💬 Interessado</span></div>
+  <div class="sm-item" onclick="setLeadStatus(null,'vendido')"><span class="status-badge s-vendido">✅ Vendido</span></div>
+  <div class="sm-item" onclick="setLeadStatus(null,'perdido')"><span class="status-badge s-perdido">❌ Perdido</span></div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════
+   SITE GENERATOR ENGINE
+══════════════════════════════════════ */
+const CATS = {
+  barbea:{ac:'#c9a24a',ac2:'#8a6d2f',theme:'dark',svcs:[['✂️','Corte masculino','Estilo e precisão em cada corte.'],['🧔','Barba','Barba alinhada e bem cuidada.'],['🔥','Combo completo','Corte + barba com atendimento top.'],['⭐','Experiência','Ambiente pensado pra você relaxar.']],frase:'Mais que um corte, uma experiência.',layout:'barber'},
+  clinic:{ac:'#0fa37f',ac2:'#0b7d61',theme:'clean',svcs:[['🩺','Consultas','Atendimento humanizado e de qualidade.'],['⚕️','Especialistas','Profissionais de diversas áreas.'],['💉','Exames e vacinas','Tecnologia e precisão no diagnóstico.'],['📅','Agendamento online','Marque sua consulta pelo WhatsApp.']],frase:'Sua saúde em boas mãos',layout:'clinic'},
+  odontolog:{ac:'#0fa37f',ac2:'#0b7d61',theme:'clean',svcs:[['🦷','Clínica geral','Saúde bucal completa e preventiva.'],['✨','Estética dental','Clareamento, lentes e um sorriso novo.'],['🩺','Urgências','Atendimento rápido quando você precisa.'],['😁','Ortodontia','Alinhe seu sorriso com conforto.']],frase:'Seu sorriso em boas mãos',layout:'clinic'},
+  estetic:{ac:'#c07a86',ac2:'#9a5a66',theme:'clean',svcs:[['✨','Estética facial','Tratamentos que realçam sua beleza natural.'],['💆','Limpeza de pele','Pele renovada, saudável e radiante.'],['💉','Harmonização','Equilíbrio e beleza em cada detalhe.'],['🌿','Bem-estar','Um momento só seu, com todo o carinho.']],frase:'Realce o que te faz única',layout:'clinic'},
+  imobil:{ac:'#5b6cff',ac2:'#3f4fd6',theme:'light',svcs:[['🏠','Compra & venda','O imóvel certo pra você.'],['🔑','Locação','Alugue com segurança e agilidade.'],['📈','Avaliação','Saiba o valor justo do seu imóvel.'],['🤝','Assessoria','Acompanhamento do início ao fim.']],frase:'O imóvel ideal para o seu próximo capítulo.',layout:'realestate'},
+  academ:{ac:'#ff3d8b',ac2:'#d6246e',theme:'dark',svcs:[['🏋️','Musculação','Estrutura completa pra treinar.'],['🤸','Aulas','Diversas modalidades pra você.'],['🥗','Acompanhamento','Profissionais pra te orientar.'],['🔥','Resultados','Alcance seus objetivos com a gente.']],frase:'Disciplina hoje, resultados sempre.',layout:'gym'},
+  restaur:{ac:'#e0612f',ac2:'#b8481f',theme:'light',svcs:[['🍽️','Pratos especiais','Sabor preparado na hora pra você.'],['🛵','Delivery','Peça e receba quentinho em casa.'],['🎉','Eventos','Reserve para seu grupo ou ocasião.'],['⭐','Ambiente','Um espaço aconchegante pra todos.']],frase:'Sabor que conquista',layout:'restaurant'},
+  pizz:{ac:'#e0612f',ac2:'#b8481f',theme:'light',svcs:[['🍕','Pizzas','Massa artesanal e recheios generosos.'],['🛵','Delivery','Pizza quentinha na sua porta.'],['🎉','Promoções','Ofertas especiais toda semana.'],['⭐','Tradição','O sabor que todo mundo ama.']],frase:'A pizza que você ama',layout:'restaurant'},
+  lanch:{ac:'#e0612f',ac2:'#b8481f',theme:'light',svcs:[['🍔','Lanches','Os melhores lanches da região.'],['🛵','Delivery','Entrega rápida, sabor garantido.'],['🥤','Combos','Combos que cabem no seu bolso.'],['⭐','Qualidade','Ingredientes fresquinhos sempre.']],frase:'Matou a fome, matou a vontade',layout:'restaurant'},
+  belez:{ac:'#c07a86',ac2:'#9a5a66',theme:'clean',svcs:[['✨','Estética facial','Tratamentos que realçam sua beleza natural.'],['💆','Limpeza de pele','Pele renovada, saudável e radiante.'],['💅','Design & cuidados','Detalhes que fazem toda a diferença.'],['🌿','Bem-estar','Um momento só seu, com todo o carinho.']],frase:'Realce o que te faz única',layout:'clinic'},
+  cabele:{ac:'#c07a86',ac2:'#9a5a66',theme:'clean',svcs:[['💇','Cortes & estilo','O visual perfeito pra você.'],['🎨','Coloração','Cores vivas e tratamento completo.'],['💆','Tratamentos','Cabelos saudáveis e brilhantes.'],['✨','Dia da noiva','Seu dia especial do jeito que merece.']],frase:'Seu estilo, do seu jeito',layout:'clinic'},
+  padaria:{ac:'#c79233',ac2:'#9c6f1f',theme:'light',svcs:[['🥖','Pães frescos','Saídos do forno todos os dias.'],['🎂','Confeitaria','Bolos e doces pra adoçar seu dia.'],['☕','Café da manhã','Comece o dia com o melhor.'],['🛵','Encomendas','Peça pelo WhatsApp com facilidade.']],frase:'Feito fresquinho pra você',layout:'generic'},
+  oficina:{ac:'#e0742a',ac2:'#b8571a',theme:'light',svcs:[['🔧','Mecânica geral','Revisão completa com garantia.'],['🛞','Pneus & alinhamento','Segurança na estrada.'],['🔋','Elétrica','Diagnóstico eletrônico preciso.'],['🛠️','Manutenção','Seu carro sempre em dia.']],frase:'Seu carro em boas mãos',layout:'generic'},
+  petshop:{ac:'#1aa0bd',ac2:'#0f7d95',theme:'clean',svcs:[['🐶','Banho & tosa','Seu pet limpinho e cheiroso.'],['🏥','Veterinário','Saúde e cuidado pro seu amigo.'],['🦴','Produtos','Tudo que o seu pet precisa.'],['❤️','Carinho','Tratamos seu pet como família.']],frase:'Quem ama, cuida',layout:'generic'},
+  advoc:{ac:'#2a5bb0',ac2:'#1d4488',theme:'clean',svcs:[['⚖️','Consultoria','Orientação jurídica de confiança.'],['📄','Contratos','Segurança em cada documento.'],['🤝','Atendimento','Soluções pro seu caso.'],['🛡️','Defesa','Seus direitos bem representados.']],frase:'Seus direitos, nossa prioridade',layout:'generic'},
+  farmac:{ac:'#13a873',ac2:'#0c8358',theme:'clean',svcs:[['💊','Medicamentos','Tudo que você precisa, pertinho.'],['🩹','Cuidados','Saúde e bem-estar no dia a dia.'],['🛵','Entrega','Receba em casa com rapidez.'],['💬','Atendimento','Tire suas dúvidas pelo WhatsApp.']],frase:'Saúde e cuidado perto de você',layout:'generic'},
+  mercado:{ac:'#d4a017',ac2:'#a87d0e',theme:'light',svcs:[['🛒','Variedade','De tudo um pouco pra sua casa.'],['💰','Preço bom','Ofertas que cabem no bolso.'],['🛵','Delivery','Sua compra na porta de casa.'],['⭐','Qualidade','Produtos fresquinhos sempre.']],frase:'Tudo que você precisa, pertinho',layout:'generic'},
+  hotel:{ac:'#8a5fc0',ac2:'#6a4499',theme:'clean',svcs:[['🛏️','Conforto','Quartos pensados pro seu descanso.'],['🍳','Café incluso','Comece bem o seu dia.'],['📶','Estrutura','Wi-Fi, estacionamento e mais.'],['⭐','Atendimento','Hospitalidade que faz diferença.']],frase:'Sinta-se em casa',layout:'generic'},
+};
+const CAT_DEF={ac:'#b07a45',ac2:'#8a5d34',theme:'light',svcs:[['⭐','Qualidade','Atendimento de excelência pra você.'],['⏱️','Agilidade','Rapidez no que realmente importa.'],['🤝','Confiança','Clientes satisfeitos é o nosso foco.'],['💬','Atendimento','Fale com a gente pelo WhatsApp.']],frase:'Qualidade e confiança pra você',layout:'generic'};
+const MENU_CFG={barber:{items:['Início','Serviços','Sobre','Contato'],cta:'Agendar'},clinic:{items:['Início','Especialidades','Equipe','Depoimentos'],cta:'Agendar consulta'},realestate:{items:['Início','Imóveis','Sobre','Contato'],cta:'Falar com corretor'},gym:{items:['Início','Planos','Treinos','Sobre'],cta:'Quero treinar'},restaurant:{items:['Início','Cardápio','Sobre','Contato'],cta:'Pedir agora'},generic:{items:['Início','Serviços','Sobre','Depoimentos'],cta:'Fale conosco'}};
+const ANCHORS={'Início':'#inicio','Serviços':'#servicos','Sobre':'#sobre','Contato':'#contato','Especialidades':'#servicos','Equipe':'#sobre','Depoimentos':'#depoimentos','Imóveis':'#servicos','Planos':'#servicos','Treinos':'#sobre','Cardápio':'#servicos'};
+const DOR={restaur:'quem tá com fome pesquisa no celular antes de escolher onde comer',pizz:'quem quer pizza pesquisa no celular antes de pedir',lanch:'quem tá com fome pesquisa no celular antes de pedir',padaria:'quem quer pão pesquisa no celular antes de sair de casa',barbea:'quem quer cortar o cabelo pesquisa no celular antes de escolher a barbearia',cabele:'quem quer cuidar do cabelo pesquisa no celular antes de escolher o salão',belez:'quem quer se cuidar pesquisa no celular antes de escolher o lugar',estetic:'quem quer se cuidar pesquisa no celular antes de escolher a clínica',academ:'quem quer treinar pesquisa no celular antes de escolher a academia',odontolog:'quem precisa de dentista pesquisa no celular antes de marcar',clinic:'quem precisa de consulta pesquisa no celular antes de marcar',petshop:'quem ama o pet pesquisa no celular antes de escolher onde cuidar dele',oficina:'quem precisa de mecânico pesquisa no celular antes de levar o carro',imobil:'quem busca imóvel pesquisa no celular antes de visitar',farmac:'quem precisa de remédio pesquisa no celular antes de sair',mercado:'quem faz compra pesquisa no celular antes de escolher o mercado',hotel:'quem viaja pesquisa no celular antes de reservar onde ficar'};
+
+function norm(s){return(s||'').normalize('NFKD').replace(/[̀-ͯ]/g,'').toLowerCase()}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function getCfg(cat){const c=norm(cat);for(const[k,v]of Object.entries(CATS)){if(c.includes(norm(k)))return v;}return CAT_DEF}
+function getDor(cat){const c=norm(cat);for(const[k,v]of Object.entries(DOR)){if(c.includes(norm(k)))return v;}return'hoje em dia todo mundo pesquisa no celular antes de escolher'}
+
+function buildSiteHTML(data) {
+  const nome=esc(data.nome||'Sua Empresa'),catRaw=data.categoria||'',cat=esc(catRaw.charAt(0).toUpperCase()+catRaw.slice(1)),cidade=esc(data.cidade||''),tel=(data.telefone||'').replace(/\D/g,''),wa=tel&&!tel.startsWith('55')?'55'+tel:tel,waLink=wa?`https://wa.me/${wa}?text=`:'#contato',waAttr=wa?`href="${waLink}" target="_blank" rel="noopener"`:'href="#contato"',endereco=esc(data.endereco||''),inicial=(nome.trim()[0]||'S').toUpperCase(),cfg=getCfg(catRaw),{ac,ac2,theme,svcs,frase,layout}=cfg,mc=MENU_CFG[layout]||MENU_CFG.generic,navLinks=mc.items.map(m=>`<a href="${ANCHORS[m]||'#'}">${m}</a>`).join(''),drawerLinks=mc.items.map(m=>`<a href="${ANCHORS[m]||'#'}" onclick="mm()">${m}</a>`).join(''),cta=mc.cta,cards=svcs.map(([i,t,d])=>`<div class="svc reveal"><div class="svc-ic">${i}</div><h3>${esc(t)}</h3><p>${esc(d)}</p></div>`).join(''),desc=esc(data.descricao||`A ${nome} nasceu pra oferecer um atendimento diferente${cidade?' aqui em '+cidade:''}: feito com cuidado, atenção aos detalhes e foco total na sua satisfação.`);
+  let cssTheme='';if(theme==='dark')cssTheme=`:root{--ink:#f3f1ee;--mut:#a39e98;--bg:#161616;--card:#202020;--line:#2e2e2e}header{background:rgba(20,20,20,.9)}.servicos,.depo{background:#1b1b1b}.svc,.dcard{background:#222;border-color:#303030}footer{background:#0e0e0e}.btn-ghost{color:var(--ink);border-color:#3a3a3a}`;else if(theme==='clean')cssTheme=':root{--bg:#ffffff;--card:#f6f8f8}.servicos,.depo{background:#f6f8f8}';
+  let heroExtra='',floatCard='',cssLayout='';
+  if(layout==='barber'){heroExtra='<div class="hero-stats"><div class="hs"><b>+2.500</b><span>clientes atendidos</span></div><div class="hs"><b>4.9</b><span>avaliação média</span></div><div class="hs"><b>100%</b><span>satisfação</span></div></div>';floatCard='<div class="float-card"><span class="fc-ic">📅</span><div><b>Agendamentos</b><span>online</span></div></div>';cssLayout='.hero-stats{display:flex;gap:34px;margin-top:30px;flex-wrap:wrap}.hs b{font-family:"Playfair Display",serif;font-size:34px;color:var(--ac);display:block;line-height:1}.hs span{color:var(--mut);font-size:12.5px}.float-card{position:absolute;right:-14px;bottom:26px;background:#222;color:#fff;border-radius:16px;padding:14px 18px;display:flex;gap:12px;align-items:center;box-shadow:0 20px 40px -16px rgba(0,0,0,.6)}.float-card .fc-ic{width:38px;height:38px;border-radius:10px;background:var(--ac);display:grid;place-items:center;font-size:18px}.float-card b{display:block;font-size:14px}.float-card span{font-size:11.5px;color:#bbb}.hero-imgwrap{position:relative}';}
+  else if(layout==='clinic'){floatCard='<div class="chip-list"><div class="chip"><span>🟢</span>Atendimento online</div><div class="chip"><span>👥</span>Especialistas</div><div class="chip"><span>💉</span>Exames e vacinas</div></div>';cssLayout='.chip-list{position:absolute;right:-10px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:12px}.chip{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 16px;display:flex;gap:10px;align-items:center;font-weight:600;font-size:13.5px;box-shadow:0 14px 30px -16px rgba(0,0,0,.25);white-space:nowrap}.hero-imgwrap{position:relative}';}
+  else if(layout==='realestate'){heroExtra='<div class="search-bar"><div class="sb-row"><input type="text" placeholder="Buscar imóvel..."><button>🔍</button></div></div><div class="minis" style="margin-top:22px"><div class="mini"><b>✓</b>Imóveis verificados</div><div class="mini"><b>★</b>Especializado</div><div class="mini"><b>♥</b>Financiamento</div></div>';floatCard='<div class="float-card fc-light"><span class="fc-ic">🏠</span><div><b>Lugares que</b><span>transformam vidas</span></div></div>';cssLayout='.search-bar{background:#fff;border:1px solid var(--line);border-radius:16px;padding:8px;margin-top:28px;box-shadow:0 14px 34px -16px rgba(0,0,0,.18);max-width:520px}.sb-row{display:flex;gap:8px}.search-bar input{flex:1;padding:13px 16px;border:1px solid var(--line);border-radius:11px;font-size:14.5px}.search-bar button{padding:0 18px;background:var(--ac);color:#fff;border:none;border-radius:11px;font-size:16px;cursor:pointer}.float-card{position:absolute;right:-14px;bottom:26px;background:#1d2433;color:#fff;border-radius:16px;padding:14px 18px;display:flex;gap:12px;align-items:center;box-shadow:0 20px 40px -16px rgba(0,0,0,.5)}.float-card .fc-ic{width:38px;height:38px;border-radius:10px;background:var(--ac);display:grid;place-items:center;font-size:18px}.float-card b{display:block;font-size:14px}.float-card span{font-size:11.5px;color:#aab}.hero-imgwrap{position:relative}';}
+  else if(layout==='gym'){floatCard='<div class="chip-list chip-dark"><div class="chip"><span>🏆</span>Treinos personalizados</div><div class="chip"><span>👤</span>Acompanhamento profissional</div><div class="chip"><span>📊</span>Resultados reais</div></div>';cssLayout='.hero{background:radial-gradient(700px 400px at 80% 10%,rgba(255,61,139,.12),transparent 60%)}.chip-list{position:absolute;right:-10px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:12px}.chip{background:#222;border:1px solid #333;color:#fff;border-radius:14px;padding:12px 16px;display:flex;gap:10px;align-items:center;font-weight:600;font-size:13.5px;box-shadow:0 14px 30px -16px rgba(0,0,0,.6);white-space:nowrap}.hero-imgwrap{position:relative}';}
+  else{heroExtra='<div class="minis" style="margin-top:26px"><div class="mini"><b>✓</b>Profissionais especializados</div><div class="mini"><b>★</b>Atendimento de excelência</div><div class="mini"><b>♥</b>Clientes satisfeitos</div></div>';}
+  const mapaQ=encodeURIComponent([nome,endereco,cidade].filter(Boolean).join(', ')),mapaHtml=(cidade||endereco)?`<section class="mapa"><div class="wrap"><div class="head reveal"><div class="eye">Localização</div><h2>Onde nos encontrar</h2></div><div class="mapwrap reveal"><iframe src="https://maps.google.com/maps?q=${mapaQ}&z=15&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Mapa"></iframe></div></div></section>`:'';
+  const css=`:root{--ac:${ac};--ac2:${ac2};--ink:#2b2420;--mut:#7c726a;--bg:#fbf8f5;--card:#fff;--line:#eee6df}*{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth}body{font-family:'Inter',system-ui,sans-serif;color:var(--ink);background:var(--bg);line-height:1.65}img{display:block;max-width:100%}a{color:inherit;text-decoration:none}.wrap{max-width:1120px;margin:0 auto;padding:0 22px}h1,h2,h3,.serif{font-family:'Playfair Display',serif}.btn{display:inline-flex;align-items:center;gap:8px;background:var(--ac);color:#fff;font-weight:600;padding:14px 26px;border-radius:999px;font-size:15px;transition:.2s;box-shadow:0 10px 26px -10px var(--ac);border:none;cursor:pointer}.btn:hover{filter:brightness(1.07);transform:translateY(-2px)}.btn-ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}.eye{color:var(--ac);font-weight:700;font-size:12.5px;letter-spacing:.16em;text-transform:uppercase;margin-bottom:14px}section{padding:74px 0}header{position:sticky;top:0;z-index:50;background:rgba(251,248,245,.88);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}.nav{display:flex;align-items:center;justify-content:space-between;height:70px}.brand{display:flex;align-items:center;gap:11px;font-weight:700}.brand .mk{width:42px;height:42px;border-radius:12px;background:var(--ac);color:#fff;display:grid;place-items:center;font-family:'Playfair Display',serif;font-size:21px;font-weight:700}.brand b{font-size:18px}.brand span{display:block;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);font-weight:600}.menu{display:flex;gap:26px;align-items:center}.menu a{color:var(--mut);font-size:14.5px;font-weight:500}.menu a:hover{color:var(--ink)}.burger{display:none;width:44px;height:44px;border-radius:12px;font-size:22px;background:rgba(0,0,0,.03);border:1px solid var(--line);color:var(--ink);cursor:pointer}.scrim{position:fixed;inset:0;z-index:70;background:rgba(40,28,22,.42);backdrop-filter:blur(2px);opacity:0;visibility:hidden;transition:.25s}body.mopen .scrim{opacity:1;visibility:visible}.mdrawer{position:fixed;z-index:71;top:78px;right:14px;left:14px;max-width:360px;margin-left:auto;background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:0 30px 70px -20px rgba(40,25,15,.4);padding:10px;opacity:0;visibility:hidden;transform:translateY(-12px) scale(.98);transform-origin:top right;transition:.27s cubic-bezier(.3,.8,.3,1)}body.mopen .mdrawer{opacity:1;visibility:visible;transform:none}.mdrawer a{display:block;padding:14px 16px;color:var(--ink);border-radius:12px;font-weight:600;font-size:16px}.mdrawer a:active,.mdrawer a:hover{background:color-mix(in srgb,var(--ac) 10%,#fff)}.mdrawer .btn{display:block;text-align:center;margin-top:6px;color:#fff}.hero{padding:56px 0 70px;background:radial-gradient(700px 360px at 85% 0%,rgba(0,0,0,.025),transparent 60%)}.hero-grid{display:grid;grid-template-columns:1.02fr .98fr;gap:46px;align-items:center}.hero h1{font-size:clamp(34px,5vw,56px);font-weight:800;line-height:1.08;margin:6px 0 18px}.hero p.lead{color:var(--mut);font-size:18px;max-width:520px;margin-bottom:26px}.hero-btns{display:flex;gap:12px;flex-wrap:wrap}.minis{display:flex;gap:24px;flex-wrap:wrap}.mini{display:flex;gap:10px;align-items:center;font-size:13.5px;color:var(--mut);font-weight:600}.mini b{width:34px;height:34px;border-radius:10px;background:color-mix(in srgb,var(--ac) 14%,#fff);display:grid;place-items:center;font-size:17px;color:var(--ac)}.hero-img,.sobre-img{border-radius:22px;overflow:hidden;aspect-ratio:4/4.2;box-shadow:0 30px 60px -24px rgba(60,40,30,.35)}.hero-img img,.sobre-img img{width:100%;height:100%;object-fit:cover}.ph{border-radius:22px}.servicos{background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}.head{text-align:center;max-width:640px;margin:0 auto 46px}.head h2{font-size:clamp(27px,3.6vw,38px);font-weight:700;margin-bottom:12px}.head p{color:var(--mut)}.svc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}.svc{background:var(--bg);border:1px solid var(--line);border-radius:18px;padding:26px 22px;text-align:center;transition:.25s}.svc:hover{transform:translateY(-5px);box-shadow:0 20px 40px -20px rgba(60,40,30,.25);border-color:color-mix(in srgb,var(--ac) 40%,var(--line))}.svc-ic{width:58px;height:58px;border-radius:16px;background:color-mix(in srgb,var(--ac) 12%,#fff);display:grid;place-items:center;font-size:27px;margin:0 auto 16px}.svc h3{font-size:18px;margin-bottom:7px}.svc p{color:var(--mut);font-size:14px}.sobre-grid{display:grid;grid-template-columns:.95fr 1.05fr;gap:46px;align-items:center}.sobre h2{font-size:clamp(26px,3.6vw,38px);font-weight:700;margin:6px 0 16px}.sobre p{color:var(--mut);margin-bottom:14px}.stats{display:flex;gap:30px;margin-top:26px;flex-wrap:wrap}.stat b{font-family:'Playfair Display',serif;font-size:32px;color:var(--ac);display:block}.stat span{color:var(--mut);font-size:13px}.depo{background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}.depo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}.dcard{background:var(--bg);border:1px solid var(--line);border-radius:18px;padding:26px}.dcard .stars{color:#f2b705;margin-bottom:12px;font-size:15px}.dcard p{font-size:14.5px;margin-bottom:16px}.dcard .who{display:flex;align-items:center;gap:11px}.dcard .av{width:40px;height:40px;border-radius:50%;background:var(--ac);color:#fff;display:grid;place-items:center;font-weight:700}.dcard .who b{font-size:14px;display:block}.dcard .who span{font-size:12px;color:var(--mut)}.cta{text-align:center;background:linear-gradient(135deg,var(--ac),var(--ac2));color:#fff}.cta h2{font-size:clamp(26px,3.8vw,40px);margin-bottom:12px}.cta p{opacity:.92;max-width:540px;margin:0 auto 26px}.cta .btn{background:#fff;color:var(--ac)}.mapa{background:var(--bg);padding:74px 0}.mapwrap{border-radius:18px;overflow:hidden;border:1px solid var(--line);box-shadow:0 20px 44px -22px rgba(60,40,30,.28)}.mapwrap iframe{width:100%;height:380px;border:0;display:block}footer{background:#221c18;color:#cfc6bd;padding:48px 0 26px;font-size:14px}.fgrid{display:flex;justify-content:space-between;gap:30px;flex-wrap:wrap;margin-bottom:26px}footer .brand .mk{background:var(--ac)}footer .brand b,footer .brand{color:#fff}footer .ctt p{margin-bottom:6px}.copy{border-top:1px solid #3a322c;padding-top:20px;text-align:center;color:#8a7f75;font-size:12.5px}.wfloat{position:fixed;right:18px;bottom:18px;z-index:60;width:58px;height:58px;border-radius:50%;background:#25d366;display:grid;place-items:center;box-shadow:0 10px 30px rgba(37,211,102,.5)}.badge-v{position:fixed;left:14px;bottom:14px;background:#221c18;color:#cfc6bd;font-size:11px;padding:7px 12px;border-radius:999px;opacity:.9;z-index:60}.reveal{opacity:0;transform:translateY(22px);transition:.6s}.reveal.in{opacity:1;transform:none}@media(max-width:900px){.hero-grid,.sobre-grid{grid-template-columns:1fr;gap:30px}.svc-grid{grid-template-columns:1fr 1fr}.depo-grid{grid-template-columns:1fr}.menu{display:none}.burger{display:block}.sobre-img{order:-1}.chip-list,.float-card{display:none}}@media(max-width:560px){.svc-grid{grid-template-columns:1fr}section{padding:54px 0}}${cssTheme}${cssLayout}`;
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${nome}${cidade?' · '+cidade:''}</title><meta name="description" content="${nome} — ${cat||'atendimento de qualidade'}${cidade?' em '+cidade:''}."><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><style>${css}</style></head><body><header><div class="wrap nav"><a href="#" class="brand"><span class="mk">${inicial}</span><div><b>${nome}</b><span>${cat||'Qualidade & confiança'}</span></div></a><nav class="menu">${navLinks}<a class="btn" ${waAttr}>${cta}</a></nav><button class="burger" onclick="mm()" aria-label="menu">☰</button></div></header><div class="scrim" onclick="mm()"></div><nav class="mdrawer">${drawerLinks}<a class="btn" ${waAttr}>${cta}</a></nav><section class="hero" id="inicio"><div class="wrap hero-grid"><div><div class="eye">${cat||'Atendimento personalizado'}${cidade?' · '+cidade:''}</div><h1>${frase}</h1><p class="lead">Na ${nome}, cuidamos de cada detalhe com qualidade, dedicação e muito carinho pra você ter a melhor experiência.</p><div class="hero-btns"><a class="btn" ${waAttr}>${cta} →</a><a class="btn btn-ghost" href="#servicos">Nossos serviços</a></div>${heroExtra}</div><div class="hero-imgwrap"><div class="hero-img ph" style="background:linear-gradient(135deg,${ac},${ac2})"></div>${floatCard}</div></div></section><section class="servicos" id="servicos"><div class="wrap"><div class="head reveal"><div class="eye">O que oferecemos</div><h2>Nossos serviços</h2><p>Conheça o que a ${nome} preparou pra cuidar de você.</p></div><div class="svc-grid">${cards}</div></div></section><section class="sobre" id="sobre"><div class="wrap sobre-grid"><div class="sobre-img ph" style="background:linear-gradient(135deg,${ac2},${ac})"></div><div class="reveal"><div class="eye">Sobre nós</div><h2>Mais que ${(cat||'um serviço').toLowerCase()}, é dedicação</h2><p>${desc}</p><p>Nosso compromisso é que você se sinta bem e saia com o melhor resultado — sempre.</p><div class="stats"><div class="stat"><b>+5</b><span>anos de experiência</span></div><div class="stat"><b>+3 mil</b><span>clientes atendidos</span></div><div class="stat"><b>100%</b><span>foco em você</span></div></div></div></div></section><section class="depo" id="depoimentos"><div class="wrap"><div class="head reveal"><div class="eye">Depoimentos</div><h2>O que dizem sobre a gente</h2></div><div class="depo-grid"><div class="dcard reveal"><div class="stars">★★★★★</div><p>"Atendimento impecável e resultado que superou minhas expectativas. Virei cliente fiel!"</p><div class="who"><span class="av">A</span><div><b>Ana Paula</b><span>Cliente</span></div></div></div><div class="dcard reveal"><div class="stars">★★★★★</div><p>"Profissionais atenciosos e um cuidado com cada detalhe. Recomendo de olhos fechados."</p><div class="who"><span class="av">C</span><div><b>Carlos Souza</b><span>Cliente</span></div></div></div><div class="dcard reveal"><div class="stars">★★★★★</div><p>"Ambiente acolhedor e serviço de altíssima qualidade. Só tenho a agradecer!"</p><div class="who"><span class="av">M</span><div><b>Mariana Lima</b><span>Cliente</span></div></div></div></div></div></section>${mapaHtml}<section class="cta" id="contato"><div class="wrap reveal"><h2>Pronto pra ser atendido pela ${nome}?</h2><p>Fale com a gente agora mesmo pelo WhatsApp. Será um prazer te atender!</p><a class="btn" ${waAttr}>Falar no WhatsApp</a>${tel?`<p style="margin-top:20px;opacity:.9">📞 ${esc(tel)}${endereco?' · 📍 '+endereco:''}</p>`:''}</div></section><footer><div class="wrap"><div class="fgrid"><div class="brand"><span class="mk">${inicial}</span><div><b>${nome}</b><span style="color:#8a7f75">${cat||''}${cidade?' · '+cidade:''}</span></div></div><div class="ctt">${tel?`<p>📞 ${esc(tel)}</p>`:''}${endereco?`<p>📍 ${endereco}</p>`:''}  <p>Atendimento todos os dias</p></div></div><div class="copy">© ${nome} — Todos os direitos reservados.</div></div></footer>${wa?`<a class="wfloat" ${waAttr} aria-label="WhatsApp"><svg width="30" height="30" viewBox="0 0 24 24" fill="#fff"><path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.945C.16 5.335 5.495 0 12.05 0a11.82 11.82 0 018.413 3.488 11.82 11.82 0 013.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 01-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 001.51 5.26l-.999 3.648 3.978-1.615zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.074-.149-.669-1.611-.916-2.206-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg></a>`:''}
+<div class="badge-v">⚡ gerado com Veltora</div><script>const io=new IntersectionObserver(e=>e.forEach(x=>{if(x.isIntersecting){x.target.classList.add('in');io.unobserve(x.target)}}),{threshold:.1});document.querySelectorAll('.reveal').forEach(e=>io.observe(e));function mm(){document.body.classList.toggle('mopen')}window.addEventListener('scroll',()=>{if(document.body.classList.contains('mopen'))document.body.classList.remove('mopen')},{passive:true});<\/script></body></html>`;
+}
+
+function gerarMensagem(nome,categoria,cidade,responsavel){const dono=(responsavel||'').trim().split(' ')[0],saud=dono?`Oi, ${dono}! `:'Oi! Tudo bem? ',local=cidade?` aí em ${cidade}`:'',dor=getDor(categoria);return `${saud}\n\nAqui é da *Veltora* 👋 a gente ajuda empresas a aparecer no Google e vender mais pela internet.\n\nDei uma olhada na *${nome}*${local} e vi que vocês ainda *não têm um site* — e ${dor}. 📱\n\nEntão eu já montei, *de graça*, uma prévia de como ficaria o site de vocês. Sem compromisso nenhum.\n\nPosso te mandar pra você dar uma olhada? 👇`}
+
+/* ══════════════════════════════════════
+   LEADS CRM (localStorage)
+══════════════════════════════════════ */
+const LS_KEY = 'veltora_leads_v2';
+let leads = [];
+let activeFilter = 'all';
+let editingId = null;
+
+const STATUS_CFG = {
+  novo:     {label:'🆕 Novo',    cls:'s-novo'},
+  abordado: {label:'📤 Abordado',cls:'s-abordado'},
+  viu:      {label:'👀 Viu o site',cls:'s-viu'},
+  interesse:{label:'💬 Interessado',cls:'s-interesse'},
+  vendido:  {label:'✅ Vendido', cls:'s-vendido'},
+  perdido:  {label:'❌ Perdido', cls:'s-perdido'},
+};
+
+function loadLeads(){try{leads=JSON.parse(localStorage.getItem(LS_KEY)||'[]')}catch{leads=[]}}
+function saveLeads(){localStorage.setItem(LS_KEY,JSON.stringify(leads))}
+function newId(){return Date.now().toString(36)+Math.random().toString(36).slice(2)}
+
+function updateStats(){
+  const total=leads.length,abord=leads.filter(l=>l.status==='abordado'||l.status==='viu').length,inte=leads.filter(l=>l.status==='interesse').length,vend=leads.filter(l=>l.status==='vendido').length;
+  document.getElementById('st-total').textContent=total;document.getElementById('st-abord').textContent=abord;document.getElementById('st-int').textContent=inte;document.getElementById('st-vend').textContent=vend;
+  document.getElementById('leadsCount').textContent=total?`(${total})`:'';
+  document.getElementById('leadCountBadge').textContent=total;
+}
+
+function renderLeads(){
+  const q=norm(document.getElementById('searchInput').value||'');
+  const rows=leads.filter(l=>{
+    if(activeFilter!=='all'&&l.status!==activeFilter)return false;
+    if(q&&!norm(l.nome).includes(q)&&!norm(l.categoria).includes(q)&&!norm(l.cidade||'').includes(q))return false;
+    return true;
+  });
+  const body=document.getElementById('leadsBody');
+  if(!leads.length){body.innerHTML='';document.getElementById('leadsEmpty').style.display='block';return}
+  document.getElementById('leadsEmpty').style.display='none';
+  const sc=STATUS_CFG;
+  body.innerHTML=rows.map(l=>{
+    const s=sc[l.status]||sc.novo,wa=(l.telefone||'').replace(/\D/g,''),waNum=wa&&!wa.startsWith('55')?'55'+wa:wa;
+    return`<tr>
+      <td><div class="lead-name">${esc(l.nome)}</div><div class="lead-cat">${esc(l.categoria||'—')}</div></td>
+      <td class="lead-city">${esc(l.cidade||'—')}${l.uf?' · '+esc(l.uf):''}</td>
+      <td>${wa?`<a class="lead-phone" href="https://wa.me/${waNum}" target="_blank">${esc(l.telefone)}</a>`:`<span style="color:var(--muted);font-size:13px">—</span>`}</td>
+      <td><button class="status-badge ${s.cls}" onclick="openStatusMenu('${l.id}',event)">${s.label} ▾</button></td>
+      <td><div class="row-actions">
+        <button class="btn btn-ghost btn-sm" onclick="genFromLead('${l.id}')" title="Gerar site">⚡ Site</button>
+        <button class="btn btn-info btn-sm" onclick="copyLeadMsg('${l.id}')" title="Copiar mensagem">💬 Msg</button>
+        ${waNum?`<button class="btn btn-ok btn-sm" onclick="sendLeadWA('${l.id}')" title="Abrir WhatsApp">📱</button>`:''}
+        <button class="btn btn-ghost btn-sm" onclick="editLead('${l.id}')" title="Editar">✏️</button>
+        <button class="btn btn-err btn-sm" onclick="deleteLead('${l.id}')" title="Remover">🗑️</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+  updateStats();
+}
+
+function setFilter(f,btn){activeFilter=f;document.querySelectorAll('.sf-btn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');renderLeads()}
+
+function openAddLead(){editingId=null;document.getElementById('modalTitle').textContent='Novo Lead';['m-nome','m-cat','m-cidade','m-uf','m-tel','m-end','m-resp','m-cnpj','m-obs'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});document.getElementById('modalLead').classList.add('on')}
+
+function editLead(id){const l=leads.find(x=>x.id===id);if(!l)return;editingId=id;document.getElementById('modalTitle').textContent='Editar Lead';document.getElementById('m-nome').value=l.nome||'';document.getElementById('m-cat').value=l.categoria||'';document.getElementById('m-cidade').value=l.cidade||'';document.getElementById('m-uf').value=l.uf||'';document.getElementById('m-tel').value=l.telefone||'';document.getElementById('m-end').value=l.endereco||'';document.getElementById('m-resp').value=l.responsavel||'';document.getElementById('m-cnpj').value=l.cnpj||'';document.getElementById('m-obs').value=l.obs||'';document.getElementById('modalLead').classList.add('on')}
+
+function saveLead(){const nome=document.getElementById('m-nome').value.trim();if(!nome){showToast('⚠️ Informe o nome do negócio','err');return}
+  const data={nome,categoria:document.getElementById('m-cat').value,cidade:document.getElementById('m-cidade').value.trim(),uf:document.getElementById('m-uf').value.trim().toUpperCase(),telefone:document.getElementById('m-tel').value.trim(),endereco:document.getElementById('m-end').value.trim(),responsavel:document.getElementById('m-resp').value.trim(),cnpj:document.getElementById('m-cnpj').value.trim(),obs:document.getElementById('m-obs').value.trim()};
+  if(editingId){const idx=leads.findIndex(l=>l.id===editingId);if(idx>=0){leads[idx]={...leads[idx],...data};showToast('✅ Lead atualizado!')}}
+  else{leads.unshift({id:newId(),status:'novo',criadoEm:new Date().toISOString(),...data});showToast('✅ Lead adicionado!')}
+  saveLeads();closeModal('modalLead');renderLeads()}
+
+function deleteLead(id){if(!confirm('Remover este lead?'))return;leads=leads.filter(l=>l.id!==id);saveLeads();renderLeads();showToast('🗑️ Lead removido')}
+
+// Status menu
+let _statusId=null;
+function openStatusMenu(id,e){_statusId=id;const m=document.getElementById('statusMenu');m.style.top=(e.clientY+8)+'px';m.style.left=(e.clientX-80)+'px';m.classList.add('on');e.stopPropagation()}
+function setLeadStatus(_ignored,status){if(!_statusId)return;const l=leads.find(x=>x.id===_statusId);if(l){l.status=status;saveLeads();renderLeads();document.getElementById('statusMenu').classList.remove('on');showToast('✅ Status atualizado')}}
+document.addEventListener('click',()=>document.getElementById('statusMenu').classList.remove('on'));
+
+function genFromLead(id){const l=leads.find(x=>x.id===id);if(!l)return;switchView('gen',document.querySelector('[data-view="gen"]'));document.getElementById('nome').value=l.nome||'';document.getElementById('categoria').value=l.categoria||'';document.getElementById('cidade').value=l.cidade||'';document.getElementById('telefone').value=l.telefone||'';document.getElementById('endereco').value=l.endereco||'';document.getElementById('responsavel').value=l.responsavel||'';setTimeout(generateSite,100)}
+
+function copyLeadMsg(id){const l=leads.find(x=>x.id===id);if(!l)return;const msg=gerarMensagem(l.nome,l.categoria,l.cidade,l.responsavel);navigator.clipboard.writeText(msg).then(()=>showToast('📋 Mensagem copiada!'));if(l.status==='novo'){l.status='abordado';saveLeads();renderLeads()}}
+
+function sendLeadWA(id){const l=leads.find(x=>x.id===id);if(!l)return;const tel=(l.telefone||'').replace(/\D/g,''),wa=tel&&!tel.startsWith('55')?'55'+tel:tel,msg=encodeURIComponent(gerarMensagem(l.nome,l.categoria,l.cidade,l.responsavel));window.open(`https://wa.me/${wa}?text=${msg}`,'_blank');if(l.status==='novo'){l.status='abordado';saveLeads();renderLeads()}}
+
+function saveLeadFromGen(){const d={nome:document.getElementById('nome').value.trim(),categoria:document.getElementById('categoria').value,cidade:document.getElementById('cidade').value.trim(),telefone:document.getElementById('telefone').value.trim(),endereco:document.getElementById('endereco').value.trim(),responsavel:document.getElementById('responsavel').value.trim()};if(!d.nome){showToast('⚠️ Preencha o nome','err');return}leads.unshift({id:newId(),status:'novo',criadoEm:new Date().toISOString(),...d});saveLeads();renderLeads();updateStats();showToast('💾 Lead salvo no CRM!')}
+
+function exportLeads(){const csv=['nome,categoria,cidade,telefone,endereco,status,cnpj,obs',...leads.map(l=>[l.nome,l.categoria,l.cidade,l.telefone,l.endereco,l.status,l.cnpj||'',l.obs||''].map(v=>`"${(v||'').replace(/"/g,'""')}"`).join(','))].join('\n');const b=new Blob([csv],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`veltora-leads-${new Date().toISOString().slice(0,10)}.csv`;a.click();showToast('⬇️ CSV exportado!')}
+
+function importCSV(){const inp=document.createElement('input');inp.type='file';inp.accept='.csv';inp.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const lines=ev.target.result.split('\n').slice(1);let ct=0;lines.forEach(line=>{const cols=line.match(/(".*?"|[^,]+)(?=,|$)/g);if(!cols||!cols[0])return;const clean=v=>(v||'').replace(/^"|"$/g,'').replace(/""/g,'"').trim();leads.unshift({id:newId(),status:clean(cols[5])||'novo',nome:clean(cols[0]),categoria:clean(cols[1]),cidade:clean(cols[2]),telefone:clean(cols[3]),endereco:clean(cols[4]),cnpj:clean(cols[6]),obs:clean(cols[7]),criadoEm:new Date().toISOString()});ct++});saveLeads();renderLeads();showToast(`✅ ${ct} leads importados!`)}catch{showToast('❌ Erro no CSV','err')}};r.readAsText(f)};inp.click()}
+
+/* ══════════════════════════════════════
+   GENERATOR UI
+══════════════════════════════════════ */
+let currentHtml='',isMobile=false;
+
+function getFormData(){return{nome:document.getElementById('nome').value.trim(),categoria:document.getElementById('categoria').value,cidade:document.getElementById('cidade').value.trim(),telefone:document.getElementById('telefone').value.trim(),endereco:document.getElementById('endereco').value.trim(),descricao:document.getElementById('descricao').value.trim(),responsavel:document.getElementById('responsavel').value.trim()}}
+
+function generateSite(){const d=getFormData();if(!d.nome){showToast('⚠️ Preencha o nome do negócio','err');return}const btn=document.getElementById('genBtn');btn.style.opacity='.6';btn.style.pointerEvents='none';document.getElementById('genBtnTxt').textContent='Gerando...';document.getElementById('genBtnIco').textContent='⏳';
+setTimeout(()=>{currentHtml=buildSiteHTML(d);const frame=document.getElementById('previewFrame'),empty=document.getElementById('emptyState');frame.style.display='block';empty.style.display='none';if(isMobile){frame.style.width='390px';frame.style.maxWidth='390px'}else{frame.style.width='100%';frame.style.maxWidth=''}
+const blob=new Blob([currentHtml],{type:'text/html'});frame.src=URL.createObjectURL(blob);const nomeLower=(d.nome||'site').toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');document.getElementById('previewUrl').textContent=`preview/${nomeLower}/index.html`;
+const msg=gerarMensagem(d.nome,d.categoria,d.cidade,d.responsavel);document.getElementById('msgBox').textContent=msg;document.getElementById('msgPanel').style.display='block';
+const tel=(d.telefone||'').replace(/\D/g,''),wa=tel&&!tel.startsWith('55')?'55'+tel:tel;if(wa)document.getElementById('btnWA').onclick=()=>window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`,'_blank');
+document.getElementById('actionsBar').style.display='flex';btn.style.opacity='';btn.style.pointerEvents='';document.getElementById('genBtnTxt').textContent='Gerar Novamente';document.getElementById('genBtnIco').textContent='🔄';showToast('✅ Site gerado!')},400)}
+
+function downloadSite(){if(!currentHtml)return;const d=getFormData(),n=(d.nome||'site').toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([currentHtml],{type:'text/html'}));a.download=`${n}.html`;a.click();showToast('⬇️ Download iniciado!')}
+function copyHtml(){if(!currentHtml)return;navigator.clipboard.writeText(currentHtml).then(()=>showToast('📋 HTML copiado!'))}
+function copyMsg(){navigator.clipboard.writeText(document.getElementById('msgBox').textContent).then(()=>showToast('📋 Mensagem copiada!'))}
+function openFullPreview(){if(!currentHtml)return;window.open(URL.createObjectURL(new Blob([currentHtml],{type:'text/html'})),'_blank')}
+function toggleMobile(){const f=document.getElementById('previewFrame'),b=document.getElementById('mobileBtn');isMobile=!isMobile;if(isMobile){f.style.width='390px';f.style.maxWidth='390px';b.textContent='🖥️ Desktop'}else{f.style.width='100%';f.style.maxWidth='';b.textContent='📱 Mobile'}}
+function refreshPreview(){const f=document.getElementById('previewFrame');if(currentHtml){const s=f.src;f.src='';f.src=s}}
+function resetForm(){['nome','cidade','telefone','endereco','descricao','responsavel'].forEach(id=>document.getElementById(id).value='');document.getElementById('categoria').value='';document.getElementById('msgPanel').style.display='none';document.getElementById('actionsBar').style.display='none';document.getElementById('previewFrame').style.display='none';document.getElementById('emptyState').style.display='';document.getElementById('previewUrl').textContent='Preencha os dados e clique em Gerar Site';document.getElementById('genBtnTxt').textContent='Gerar Site Agora';document.getElementById('genBtnIco').textContent='⚡';currentHtml=''}
+
+/* ══════════════════════════════════════
+   VIEW SWITCHER
+══════════════════════════════════════ */
+function switchView(id,item){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+  document.getElementById('view-'+id).classList.add('on');
+  document.querySelectorAll('.sb-item[data-view]').forEach(i=>i.classList.remove('on'));
+  if(item)item.classList.add('on');
+  document.getElementById('header-gen').style.display=id==='gen'?'':'none';
+  document.getElementById('header-leads').style.display=id==='leads'?'':'none';
+  if(id==='leads')renderLeads();
+}
+
+function closeModal(id){document.getElementById(id).classList.remove('on')}
+
+function showToast(msg,type='',dur=2800){const t=document.getElementById('toast');t.textContent=msg;t.className='toast'+(type?' '+type:'');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),dur)}
+
+/* ══════════════════════════════════════
+   ACCESS GATE
+══════════════════════════════════════ */
+// Secret salt — obfuscated
+const _S = atob('dmVsdG9yYV9zM2NyM3RfazN5XzIwMjU=');
+const LS_ACCESS = 'veltora_access_v1';
+
+async function _sha256(msg) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function isValidCode(raw) {
+  const code = raw.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (code.length < 10) return false;
+  // Format: VLTX + 6 base + 4 checksum = 14 chars (displayed with dashes: VLTX-XXXXXX-XXXX)
+  if (!code.startsWith('VLTX')) return false;
+  const base = code.slice(4, 10);
+  const check = code.slice(10, 14);
+  if (base.length < 6 || check.length < 4) return false;
+  const hash = await _sha256(_S + base);
+  return hash.slice(0, 4).toUpperCase() === check;
+}
+
+async function validateCode() {
+  const inp = document.getElementById('gateInput');
+  const btn = document.getElementById('gateBtn');
+  const errEl = document.getElementById('gateErr');
+  const raw = inp.value.trim();
+  if (!raw) { inp.classList.add('err'); setTimeout(() => inp.classList.remove('err'), 400); return; }
+  btn.disabled = true; btn.textContent = 'Verificando...';
+  const ok = await isValidCode(raw);
+  if (ok) {
+    localStorage.setItem(LS_ACCESS, JSON.stringify({ code: raw.toUpperCase(), ts: Date.now() }));
+    inp.classList.add('ok');
+    btn.textContent = '✅ Acesso liberado!';
+    setTimeout(() => { document.getElementById('gate').style.display = 'none'; }, 700);
+  } else {
+    inp.classList.add('err');
+    errEl.classList.add('on');
+    btn.disabled = false; btn.textContent = '🔓 Acessar Painel';
+    setTimeout(() => inp.classList.remove('err'), 400);
+  }
+}
+
+async function checkAccess() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(LS_ACCESS) || 'null');
+    if (saved && saved.code) {
+      const ok = await isValidCode(saved.code);
+      if (ok) { document.getElementById('gate').style.display = 'none'; return; }
+    }
+  } catch {}
+  // Show gate
+  document.getElementById('gate').style.display = 'flex';
+}
+
+document.getElementById('gateInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') validateCode();
+  // Auto-format with dashes
+  setTimeout(() => {
+    let v = document.getElementById('gateInput').value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (v.length > 4) v = v.slice(0, 4) + '-' + v.slice(4);
+    if (v.length > 11) v = v.slice(0, 11) + '-' + v.slice(11);
+    document.getElementById('gateInput').value = v.slice(0, 18);
+  }, 0);
+});
+document.getElementById('gateInput').addEventListener('input', () => {
+  document.getElementById('gateErr').classList.remove('on');
+  setTimeout(() => {
+    let v = document.getElementById('gateInput').value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (v.length > 4) v = v.slice(0, 4) + '-' + v.slice(4);
+    if (v.length > 11) v = v.slice(0, 11) + '-' + v.slice(11);
+    document.getElementById('gateInput').value = v.slice(0, 18);
+  }, 0);
+});
+
+checkAccess();
+
+/* ══════════════════════════════════════
+   INIT
+══════════════════════════════════════ */
+loadLeads();
+updateStats();
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.ctrlKey)generateSite();if(e.key==='Escape'){document.querySelectorAll('.modal-overlay.on').forEach(m=>m.classList.remove('on'))}});
+</script>
+</body>
+</html>

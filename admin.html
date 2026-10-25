@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Veltora — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#07071a;--card:#0e0f1e;--border:rgba(255,255,255,.08);--p1:#7c3aed;--g1:#7c3aed;--g2:#2563eb;--ok:#10b981;--warn:#f59e0b;--err:#ef4444;--text:#f1f5f9;--muted:#94a3b8}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+
+/* LOGIN */
+.login{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px}
+.login-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:36px;width:100%;max-width:360px;text-align:center}
+.login-logo{width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,var(--g1),var(--g2));display:grid;place-items:center;font-size:24px;font-weight:900;margin:0 auto 18px}
+.login-card h1{font-size:20px;font-weight:800;margin-bottom:6px}
+.login-card p{font-size:13.5px;color:var(--muted);margin-bottom:24px}
+.field{margin-bottom:14px;text-align:left}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.07em}
+.field input{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:10px;padding:11px 14px;font-size:14px;color:var(--text);font-family:'Inter',sans-serif}
+.field input:focus{outline:none;border-color:rgba(124,58,237,.5)}
+.btn-full{width:100%;padding:13px;border-radius:10px;background:linear-gradient(135deg,var(--g1),var(--g2));color:#fff;font-size:15px;font-weight:700;border:none;cursor:pointer;font-family:'Inter',sans-serif;box-shadow:0 8px 22px -10px rgba(124,58,237,.7)}
+.login-err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);border-radius:8px;padding:9px 14px;font-size:13px;color:var(--err);margin-bottom:14px;display:none;text-align:left}
+.login-err.on{display:block}
+
+/* APP */
+.app{display:none;max-width:860px;margin:0 auto;padding:32px 20px}
+.app.on{display:block}
+.app-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:32px}
+.app-logo{display:flex;align-items:center;gap:10px}
+.app-mark{width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,var(--g1),var(--g2));display:grid;place-items:center;font-size:19px;font-weight:900}
+.app-logo b{font-size:18px;font-weight:800}
+.app-logo span{font-size:12px;color:var(--muted)}
+.logout-btn{background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:8px;padding:7px 14px;font-size:13px;color:var(--muted);cursor:pointer;font-family:'Inter',sans-serif}
+
+h2{font-size:20px;font-weight:800;margin-bottom:6px}
+.section-sub{font-size:14px;color:var(--muted);margin-bottom:20px}
+
+/* Generator */
+.gen-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:24px}
+.gen-row{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:18px}
+.gen-row .field{flex:1;min-width:120px;margin-bottom:0}
+.gen-codes{display:flex;flex-direction:column;gap:10px}
+.code-item{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;padding:12px 16px}
+.code-text{flex:1;font-family:monospace;font-size:17px;font-weight:700;letter-spacing:.06em;color:#a78bfa}
+.code-meta{font-size:12px;color:var(--muted);white-space:nowrap}
+.copy-btn{background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.25);color:#a78bfa;border-radius:8px;padding:6px 14px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap}
+.copy-btn:hover{background:rgba(124,58,237,.22)}
+.copy-all{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);color:var(--ok);border-radius:8px;padding:9px 18px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;width:100%;margin-top:14px}
+.copy-all:hover{background:rgba(16,185,129,.18)}
+.empty-gen{text-align:center;color:var(--muted);padding:24px;font-size:14px}
+
+/* Stats */
+.stats{display:flex;gap:14px;margin-bottom:24px;flex-wrap:wrap}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px;flex:1;min-width:120px}
+.stat .sl{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px}
+.stat .sv{font-size:26px;font-weight:800}
+
+/* History */
+.hist-box{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+.hist-box table{width:100%;border-collapse:collapse}
+.hist-box th{padding:11px 16px;text-align:left;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);background:rgba(255,255,255,.03);border-bottom:1px solid var(--border)}
+.hist-box td{padding:12px 16px;border-bottom:1px solid var(--border);font-size:13.5px}
+.hist-box tr:last-child td{border-bottom:none}
+.code-badge{font-family:monospace;font-size:14px;font-weight:700;color:#a78bfa}
+.s-badge{padding:3px 10px;border-radius:999px;font-size:11.5px;font-weight:700}
+.s-ativo{background:rgba(16,185,129,.12);color:var(--ok)}
+
+/* toast */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(60px);background:#1a1a30;border:1px solid rgba(16,185,129,.4);color:var(--ok);font-size:13.5px;font-weight:600;padding:11px 22px;border-radius:10px;z-index:1000;transition:.3s;opacity:0}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login" id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">V</div>
+    <h1>Admin Veltora</h1>
+    <p>Área restrita — geração de códigos de acesso</p>
+    <div class="login-err" id="loginErr">❌ Senha incorreta.</div>
+    <div class="field"><label>Senha</label><input type="password" id="adminPwd" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="btn-full" onclick="doLogin()">Entrar</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="appScreen">
+  <div class="app-header">
+    <div class="app-logo">
+      <div class="app-mark">V</div>
+      <div><b>Veltora Admin</b><br><span>Gerador de códigos de acesso</span></div>
+    </div>
+    <button class="logout-btn" onclick="doLogout()">🚪 Sair</button>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat"><div class="sl">Total gerados</div><div class="sv" id="stTotal">0</div></div>
+    <div class="stat"><div class="sl">Gerados hoje</div><div class="sv" id="stHoje" style="color:var(--warn)">0</div></div>
+    <div class="stat"><div class="sl">Esta sessão</div><div class="sv" id="stSessao" style="color:#a78bfa">0</div></div>
+  </div>
+
+  <!-- Generator -->
+  <div class="gen-box">
+    <h2>Gerar Códigos</h2>
+    <p class="section-sub">Cada código só funciona uma vez por dispositivo. Envie um código diferente para cada cliente.</p>
+    <div class="gen-row">
+      <div class="field">
+        <label>Quantidade</label>
+        <input type="number" id="qtyInput" value="1" min="1" max="50" style="max-width:100px">
+      </div>
+      <div class="field">
+        <label>Observação (opcional)</label>
+        <input type="text" id="obsInput" placeholder="Ex: João - PIX 25/10">
+      </div>
+      <button class="btn-full" style="max-width:160px;padding:11px" onclick="generateCodes()">⚡ Gerar</button>
+    </div>
+    <div class="gen-codes" id="genCodes">
+      <div class="empty-gen">Configure acima e clique em Gerar para criar os códigos.</div>
+    </div>
+    <button class="copy-all" id="copyAllBtn" style="display:none" onclick="copyAll()">📋 Copiar todos os códigos</button>
+  </div>
+
+  <!-- History -->
+  <div style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
+    <div>
+      <h2>Histórico</h2>
+      <p class="section-sub" style="margin-bottom:0">Todos os códigos gerados neste navegador</p>
+    </div>
+    <button onclick="clearHistory()" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:var(--err);border-radius:8px;padding:7px 14px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif">🗑️ Limpar</button>
+  </div>
+  <div class="hist-box">
+    <table>
+      <thead><tr><th>Código</th><th>Criado em</th><th>Observação</th><th>Status</th><th></th></tr></thead>
+      <tbody id="histBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── ADMIN SECRET (same salt as tool.html, admin password hashed) ──
+const _S = atob('dmVsdG9yYV9zM2NyM3RfazN5XzIwMjU=');
+// Admin password hash (SHA-256 of "veltora@admin2025") — change via generateAdminHash()
+const ADMIN_HASH = 'bb9d550ddea3190c979bbc702f3b96745c830d2a4c5ef1ac04657b88dd7728dd';
+const LS_HIST = 'veltora_admin_hist_v1';
+const LS_SESSION = 'veltora_admin_session';
+let sessionCount = 0;
+
+async function sha256(msg) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// ── AUTH ──
+async function doLogin() {
+  const pwd = document.getElementById('adminPwd').value;
+  const hash = await sha256(pwd);
+  // Accept if hash matches OR if user set custom hash
+  const storedHash = localStorage.getItem('veltora_admin_pwd_hash') || ADMIN_HASH;
+  if (hash === storedHash) {
+    sessionStorage.setItem(LS_SESSION, '1');
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('appScreen').classList.add('on');
+    renderHistory();
+  } else {
+    document.getElementById('loginErr').classList.add('on');
+    document.getElementById('adminPwd').value = '';
+  }
+}
+function doLogout() { sessionStorage.removeItem(LS_SESSION); location.reload(); }
+
+// ── CODE GENERATION ──
+function randBase36(len) {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0,O,1,I confusion
+  let s = '';
+  const arr = crypto.getRandomValues(new Uint8Array(len));
+  for (let i = 0; i < len; i++) s += chars[arr[i] % chars.length];
+  return s;
+}
+
+async function makeCode() {
+  const base = randBase36(6);
+  const hash = await sha256(_S + base);
+  const check = hash.slice(0, 4).toUpperCase();
+  return `VLTX-${base}-${check}`;
+}
+
+async function generateCodes() {
+  const qty = Math.min(50, Math.max(1, parseInt(document.getElementById('qtyInput').value) || 1));
+  const obs = document.getElementById('obsInput').value.trim();
+  const codes = [];
+  for (let i = 0; i < qty; i++) codes.push(await makeCode());
+
+  const container = document.getElementById('genCodes');
+  container.innerHTML = codes.map(c => `
+    <div class="code-item">
+      <span class="code-text">${c}</span>
+      ${obs ? `<span class="code-meta">${esc(obs)}</span>` : ''}
+      <button class="copy-btn" onclick="copyCode('${c}',this)">📋 Copiar</button>
+    </div>`).join('');
+
+  document.getElementById('copyAllBtn').style.display = 'block';
+  document.getElementById('copyAllBtn').dataset.codes = codes.join('\n');
+
+  // Save to history
+  const hist = loadHist();
+  const now = new Date().toISOString();
+  codes.forEach(c => hist.unshift({ code: c, obs, created: now }));
+  saveHist(hist);
+  sessionCount += codes.length;
+  renderHistory();
+  showToast(`✅ ${qty} código${qty > 1 ? 's' : ''} gerado${qty > 1 ? 's' : ''}!`);
+}
+
+function copyCode(code, btn) {
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = '✅ Copiado!';
+    setTimeout(() => btn.textContent = '📋 Copiar', 2000);
+  });
+}
+function copyAll() {
+  const txt = document.getElementById('copyAllBtn').dataset.codes;
+  navigator.clipboard.writeText(txt).then(() => showToast('📋 Todos os códigos copiados!'));
+}
+
+// ── HISTORY ──
+function loadHist() { try { return JSON.parse(localStorage.getItem(LS_HIST) || '[]'); } catch { return []; } }
+function saveHist(h) { localStorage.setItem(LS_HIST, JSON.stringify(h)); }
+function esc(s) { return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function renderHistory() {
+  const hist = loadHist();
+  const today = new Date().toDateString();
+  const todayCount = hist.filter(h => new Date(h.created).toDateString() === today).length;
+  document.getElementById('stTotal').textContent = hist.length;
+  document.getElementById('stHoje').textContent = todayCount;
+  document.getElementById('stSessao').textContent = sessionCount;
+
+  const body = document.getElementById('histBody');
+  if (!hist.length) { body.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:#4b5563">Nenhum código gerado ainda.</td></tr>'; return; }
+  body.innerHTML = hist.map(h => `
+    <tr>
+      <td><span class="code-badge">${esc(h.code)}</span></td>
+      <td style="color:#64748b;font-size:12.5px">${new Date(h.created).toLocaleString('pt-BR')}</td>
+      <td style="color:#94a3b8;font-size:13px">${esc(h.obs || '—')}</td>
+      <td><span class="s-badge s-ativo">✅ Ativo</span></td>
+      <td><button class="copy-btn" onclick="navigator.clipboard.writeText('${esc(h.code)}').then(()=>showToast('📋 Copiado!'))">📋</button></td>
+    </tr>`).join('');
+}
+
+function clearHistory() {
+  if (!confirm('Limpar todo o histórico?')) return;
+  localStorage.removeItem(LS_HIST);
+  renderHistory();
+  showToast('🗑️ Histórico limpo');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── INIT ──
+if (sessionStorage.getItem(LS_SESSION)) {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appScreen').classList.add('on');
+  renderHistory();
+}
+document.getElementById('adminPwd').addEventListener('keydown', e => e.key === 'Enter' && doLogin());
+</script>
+</body>
+</html>

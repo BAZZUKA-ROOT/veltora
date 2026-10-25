@@ -1,0 +1,23 @@
+# Estado e sessão do bot
+*.json
+!package.json
+
+# Autenticação WhatsApp (Baileys)
+.baileys_auth/
+session/
+auth_info_baileys/
+
+# Arquivos sensíveis
+.env
+*.env
+*.key
+*.pem
+qr-bot.png
+
+# Logs
+*.log
+
+# Sistema
+node_modules/
+.DS_Store
+Thumbs.db
